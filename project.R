@@ -1,9 +1,3 @@
-#Group 2
-#Members :-
-#Udit Wasan
-#Varsha Venkatachalam
-#Vaibhavi Dharashivkar
-
 #Installing the required packages.
 install.packages("RMySQL")
 install.packages("stats")
