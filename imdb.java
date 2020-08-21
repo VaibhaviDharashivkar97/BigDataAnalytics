@@ -1,11 +1,3 @@
-/*
- * Group 2
- * Members :-
- * Udit Wasan
- * Varsha Venkatachalam
- * Vaibhavi Dharashivkar
- */
-
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
