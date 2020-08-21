@@ -1,0 +1,96 @@
+CREATE database IMDB;
+
+CREATE TABLE IF NOT EXISTS PEOPLE(
+PersonId INT PRIMARY KEY,
+Name VARCHAR(120),
+BirthYear INT,
+DeathYear INT
+);
+
+CREATE TABLE IF NOT EXISTS MOVIE_TV(
+TitleId INT PRIMARY KEY,
+Name VARCHAR(420),
+TitleType VARCHAR(30),
+StartYear INT,
+EndYear INT,
+TotalRunTime INT,
+AvgRatings FLOAT,
+NoOfVotes INT
+);
+
+CREATE TABLE IF NOT EXISTS GENRES(
+GenreId INT PRIMARY KEY,
+Name VARCHAR(30)
+);
+
+CREATE TABLE IF NOT EXISTS ACTED_IN(
+PersonId INT,
+TitleId INT,
+PRIMARY KEY(PersonId,TitleId),
+FOREIGN KEY(PersonId) REFERENCES PEOPLE(PersonId),
+FOREIGN KEY(TitleId) REFERENCES MOVIE_TV(TitleId)
+);
+
+CREATE TABLE IF NOT EXISTS DIRECTED(
+PersonId INT,
+TitleId INT,
+PRIMARY KEY(PersonId,TitleId),
+FOREIGN KEY(PersonId) REFERENCES PEOPLE(PersonId),
+FOREIGN KEY(TitleId) REFERENCES MOVIE_TV(TitleId)
+);
+
+CREATE TABLE IF NOT EXISTS WRITTEN(
+PersonId INT,
+TitleId INT,
+PRIMARY KEY(PersonId,TitleId),
+FOREIGN KEY(PersonId) REFERENCES PEOPLE(PersonId),
+FOREIGN KEY(TitleId) REFERENCES MOVIE_TV(TitleId)
+);
+
+CREATE TABLE IF NOT EXISTS PRODUCED(
+PersonId INT,
+TitleId INT,
+PRIMARY KEY(PersonId,TitleId),
+FOREIGN KEY(PersonId) REFERENCES PEOPLE(PersonId),
+FOREIGN KEY(TitleId) REFERENCES MOVIE_TV(TitleId)
+);
+
+CREATE TABLE IF NOT EXISTS HAVE_GENRES(
+GenreId INT,
+TitleId INT,
+PRIMARY KEY(GenreId,TitleId),
+FOREIGN KEY(GenreId) REFERENCES GENRES(GenreId),
+FOREIGN KEY(TitleId) REFERENCES MOVIE_TV(TitleId)
+);
+
+
+
+ERROR LOG
+java.sql.BatchUpdateException: Duplicate entry '17629-7702' for key 'acted_in.PRIMARY'
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:500)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:481)
+	at com.mysql.cj.util.Util.handleNewInstance(Util.java:192)
+	at com.mysql.cj.util.Util.getInstance(Util.java:167)
+	at com.mysql.cj.util.Util.getInstance(Util.java:174)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createBatchUpdateException(SQLError.java:224)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeBatchSerially(ClientPreparedStatement.java:853)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeBatchInternal(ClientPreparedStatement.java:435)
+	at com.mysql.cj.jdbc.StatementImpl.executeBatch(StatementImpl.java:796)
+	at imdb.insertRelData(imdb.java:195)
+	at imdb.main(imdb.java:499)
+Caused by: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry '17629-7702' for key 'acted_in.PRIMARY'
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:117)
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:97)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:122)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:953)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1092)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeBatchSerially(ClientPreparedStatement.java:832)
+	... 4 more
+java.lang.ArrayIndexOutOfBoundsException: Index 8 out of bounds for length 6
+	at imdb.insertHaveG(imdb.java:43)
+	at imdb.main(imdb.java:501)
+
+

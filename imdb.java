@@ -1,3 +1,11 @@
+/*
+ * Group 2
+ * Members :-
+ * Udit Wasan
+ * Varsha Venkatachalam
+ * Vaibhavi Dharashivkar
+ */
+
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -21,11 +29,83 @@ public class imdb {
 	static String fName;
 	static int bSize = 1000;
 
+	// Function to create indexes.
+	public static void createInd() {
+		try {
+			connect = DriverManager.getConnection(url, username, password);
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			queryStatement = connect.prepareStatement("CREATE index Pnames ON people(Name)");
+			queryStatement.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (queryStatement != null) {
+					queryStatement.close();
+				}
+				if (connect != null) {
+					connect.close();
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+
+	// Function to drop the created index.
+	public static void dropInd() {
+		try {
+			connect = DriverManager.getConnection(url, username, password);
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			queryStatement = connect.prepareStatement("drop index Pnames on people");
+			queryStatement.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (queryStatement != null) {
+					queryStatement.close();
+				}
+				if (connect != null) {
+					connect.close();
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+
+	// Function to execute a written queries.
+	public static void complexQE() {
+		long start = System.currentTimeMillis();
+		try {
+			connect = DriverManager.getConnection(url, username, password);
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			queryStatement = connect.prepareStatement("Select * from people where Name like 'Jo%' and DeathYear = 0");
+			queryStatement.execute();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (queryStatement != null) {
+					queryStatement.close();
+				}
+				if (connect != null) {
+					connect.close();
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+		System.out.println("Time taken = " + (System.currentTimeMillis() - start) + "ms");
+	}
+
+	// Function to insert data into the WRITTEN Table.
 	public static void insertWriInfo() {
 		System.out.println("insertWriInfo started");
 		PreparedStatement writer = null;
 		Set<Integer> tIdSet = new HashSet<>();
-		HashMap<Integer, Set<Integer>> writerHmap = new HashMap<>();
+		Set<Integer> tSet = new HashSet<>();
 		int size = 0;
 		fName = fPath + "\\title.principals.tsv.gz";
 		try {
@@ -36,29 +116,34 @@ public class imdb {
 			connect.setAutoCommit(false);
 			scan.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			writer = connect.prepareStatement("INSERT INTO WRITTEN(PersonId,TitleId)"
 					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
 					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
+			Set<Integer> wSet = new HashSet<>();
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
 				int titleId = Integer.parseInt(information[0].substring(2));
 				if (tIdSet.contains(titleId)) {
+					if (!tSet.contains(titleId)) {
+						tSet = null;
+						wSet = null;
+						wSet = new HashSet<>();
+						tSet = new HashSet<>();
+						tSet.add(titleId);
+					}
 					int personId = Integer.parseInt(information[2].substring(2));
 					String profession = information[3];
 					if (profession.equals("writer")) {
-						if (!writerHmap.containsKey(titleId)) {
-							writerHmap.put(titleId, new HashSet<>());
-						}
-						if (!writerHmap.get(titleId).contains(personId)) {
-							writerHmap.get(titleId).add(personId);
+
+						if (!wSet.contains(personId)) {
+							wSet.add(personId);
 							writer.setInt(2, titleId);
 							writer.setInt(1, personId);
 							writer.addBatch();
 						}
-
 					}
 					size++;
 					if (size % bSize == 0) {
@@ -88,11 +173,12 @@ public class imdb {
 		System.out.println("insertWriInfo ended");
 	}
 
+	// Function to insert data into the ACTED_IN Table.
 	public static void insertActInfo() {
 		System.out.println("insertActInfo started");
 		PreparedStatement actor = null;
 		Set<Integer> tIdSet = new HashSet<>();
-		HashMap<Integer, Set<Integer>> actorHmap = new HashMap<>();
+		Set<Integer> tSet = new HashSet<>();
 		int size = 0;
 		fName = fPath + "\\title.principals.tsv.gz";
 		try {
@@ -103,24 +189,30 @@ public class imdb {
 			connect.setAutoCommit(false);
 			scan.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			actor = connect.prepareStatement("INSERT INTO ACTED_IN(PersonId,TitleId)"
 					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
 					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
+			Set<Integer> aSet = new HashSet<>();
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
 				int titleId = Integer.parseInt(information[0].substring(2));
 				if (tIdSet.contains(titleId)) {
+					if (!tSet.contains(titleId)) {
+						tSet = null;
+						aSet = null;
+						aSet = new HashSet<>();
+						tSet = new HashSet<>();
+						tSet.add(titleId);
+					}
 					int personId = Integer.parseInt(information[2].substring(2));
 					String profession = information[3];
-					if (profession.equals("self") || profession.equals("actor") || profession.equals("actress")) {
-						if (!actorHmap.containsKey(titleId)) {
-							actorHmap.put(titleId, new HashSet<>());
-						}
-						if (!actorHmap.get(titleId).contains(personId)) {
-							actorHmap.get(titleId).add(personId);
+					if (profession.equals("actor") || profession.equals("actress")) {
+
+						if (!aSet.contains(personId)) {
+							aSet.add(personId);
 							actor.setInt(2, titleId);
 							actor.setInt(1, personId);
 							actor.addBatch();
@@ -156,11 +248,12 @@ public class imdb {
 		System.out.println("insertActInfo ended");
 	}
 
+	// Function to insert data into the PRODUCED Table.
 	public static void insertProdInfo() {
 		System.out.println("insertProdInfo started");
 		PreparedStatement producer = null;
 		Set<Integer> tIdSet = new HashSet<>();
-		HashMap<Integer, Set<Integer>> producerHmap = new HashMap<>();
+		Set<Integer> tSet = new HashSet<>();
 		int size = 0;
 		fName = fPath + "\\title.principals.tsv.gz";
 		try {
@@ -171,29 +264,34 @@ public class imdb {
 			connect.setAutoCommit(false);
 			scan.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			producer = connect.prepareStatement("INSERT INTO PRODUCED(PersonId,TitleId)"
 					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
 					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
+			Set<Integer> pSet = new HashSet<>();
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
 				int titleId = Integer.parseInt(information[0].substring(2));
 				if (tIdSet.contains(titleId)) {
+					if (!tSet.contains(titleId)) {
+						tSet = null;
+						pSet = null;
+						pSet = new HashSet<>();
+						tSet = new HashSet<>();
+						tSet.add(titleId);
+					}
 					int personId = Integer.parseInt(information[2].substring(2));
 					String profession = information[3];
 					if (profession.equals("producer")) {
-						if (!producerHmap.containsKey(titleId)) {
-							producerHmap.put(titleId, new HashSet<>());
-						}
-						if (!producerHmap.get(titleId).contains(personId)) {
-							producerHmap.get(titleId).add(personId);
+
+						if (!pSet.contains(personId)) {
+							pSet.add(personId);
 							producer.setInt(2, titleId);
 							producer.setInt(1, personId);
 							producer.addBatch();
 						}
-
 					}
 					size++;
 					if (size % bSize == 0) {
@@ -203,11 +301,8 @@ public class imdb {
 					}
 				}
 			}
-
 			producer.executeBatch();
-
 			connect.commit();
-
 			scan.close();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -226,11 +321,12 @@ public class imdb {
 		System.out.println("insertProdInfo ended");
 	}
 
+	// Function to insert data into the DIRECTED Table.
 	public static void insertDirInfo() {
 		System.out.println("insertDirInfo started");
 		PreparedStatement director = null;
 		Set<Integer> tIdSet = new HashSet<>();
-		HashMap<Integer, Set<Integer>> directorHmap = new HashMap<>();
+		Set<Integer> tSet = new HashSet<>();
 		int size = 0;
 		fName = fPath + "\\title.principals.tsv.gz";
 		try {
@@ -241,38 +337,39 @@ public class imdb {
 			connect.setAutoCommit(false);
 			scan.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			director = connect.prepareStatement("INSERT INTO DIRECTED(PersonId,TitleId)"
 					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
 					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
-
+			Set<Integer> dSet = new HashSet<>();
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
 				int titleId = Integer.parseInt(information[0].substring(2));
 				if (tIdSet.contains(titleId)) {
+					if (!tSet.contains(titleId)) {
+						tSet = null;
+						dSet = null;
+						dSet = new HashSet<>();
+						tSet = new HashSet<>();
+						tSet.add(titleId);
+					}
 					int personId = Integer.parseInt(information[2].substring(2));
 					String profession = information[3];
 					if (profession.equals("director")) {
-						if (!directorHmap.containsKey(titleId)) {
-							directorHmap.put(titleId, new HashSet<>());
-						}
-						if (!directorHmap.get(titleId).contains(personId)) {
-							directorHmap.get(titleId).add(personId);
+						if (!dSet.contains(personId)) {
+							dSet.add(personId);
 							director.setInt(2, titleId);
 							director.setInt(1, personId);
 							director.addBatch();
 						}
-
 					}
 					size++;
 					if (size % bSize == 0) {
 						director.executeBatch();
-
 						connect.commit();
 						director.clearBatch();
-
 					}
 				}
 			}
@@ -297,16 +394,6 @@ public class imdb {
 		System.out.println("insertDirInfo ended");
 	}
 
-	// Function to create indexes
-	public static void createInd() {
-
-	}
-
-	// Function to execute 2 complex queries
-	public static void complexQE() {
-
-	}
-
 	// Function to insert data into the HAVE_GENRES Table.
 	public static void insertHaveG() {
 		System.out.println("insertHaveG started");
@@ -322,12 +409,12 @@ public class imdb {
 			connect.setAutoCommit(false);
 			scan.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId FROM movie_tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			result = connect.prepareStatement("SELECT * FROM genres").executeQuery();
-			while(result.next()) {
-				gMap.put(result.getString("Name"),result.getInt("GenreId") );
+			while (result.next()) {
+				gMap.put(result.getString("Name"), result.getInt("GenreId"));
 			}
 			queryStatement = connect.prepareStatement("INSERT INTO HAVE_GENRES(GenreId,TitleId)"
 					+ "SELECT GENRES.GenreId,MOVIE_TV.TitleId  FROM GENRES,MOVIE_TV "
@@ -436,143 +523,6 @@ public class imdb {
 		System.out.println("insertGenre ended");
 	}
 
-	// Function to insert data into the DIRECTED, WRITTEN, PRODUCED and ACTED_IN
-	// TABLES.
-	public static void insertRelData() {
-		System.out.println("insertRelData started");
-		Set<Integer> tIdSet = new HashSet<>();
-		PreparedStatement director = null;
-		HashMap<Integer, Set<Integer>> directorHmap = new HashMap<>();
-		PreparedStatement writer = null;
-		HashMap<Integer, Set<Integer>> writerHmap = new HashMap<>();
-		PreparedStatement producer = null;
-		HashMap<Integer, Set<Integer>> producerHmap = new HashMap<>();
-		PreparedStatement actor = null;
-		HashMap<Integer, Set<Integer>> actorHmap = new HashMap<>();
-		int size = 0;
-		fName = fPath + "\\title.principals.tsv.gz";
-		try {
-			
-			InputStream iStream = new GZIPInputStream(new FileInputStream(fName));
-			Scanner scan = new Scanner(iStream, "UTF-8");
-			connect = DriverManager.getConnection(url, username, password);
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			connect.setAutoCommit(false);
-			scan.nextLine();
-			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
-				tIdSet.add(result.getInt("TitleId"));
-			}
-			director = connect.prepareStatement("INSERT INTO DIRECTED(PersonId,TitleId)"
-					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
-					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
-			writer = connect.prepareStatement("INSERT INTO WRITTEN(PersonId,TitleId)"
-					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
-					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
-			producer = connect.prepareStatement("INSERT INTO PRODUCED(PersonId,TitleId)"
-					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
-					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
-			actor = connect.prepareStatement("INSERT INTO ACTED_IN(PersonId,TitleId)"
-					+ "SELECT PEOPLE.PersonId, MOVIE_TV.TitleId FROM PEOPLE,MOVIE_TV "
-					+ "WHERE PEOPLE.PersonId = ? AND MOVIE_TV.TitleId = ?");
-			while (scan.hasNextLine()) {
-				String information[] = scan.nextLine().split("\t");
-				int titleId = Integer.parseInt(information[0].substring(2));
-				if (tIdSet.contains(titleId)) {
-					int personId = Integer.parseInt(information[2].substring(2));
-					String profession = information[3];
-					if (profession.equals("director")) {
-						if (!directorHmap.containsKey(titleId)) {
-							directorHmap.put(titleId, new HashSet<>());
-						}
-						if (!directorHmap.get(titleId).contains(personId)) {
-							directorHmap.get(titleId).add(personId);
-							director.setInt(2, titleId);
-							director.setInt(1, personId);
-							director.addBatch();
-						}
-
-					} else if (profession.equals("writer")) {
-						if (!writerHmap.containsKey(titleId)) {
-							writerHmap.put(titleId, new HashSet<>());
-						}
-						if (!writerHmap.get(titleId).contains(personId)) {
-							writerHmap.get(titleId).add(personId);
-							writer.setInt(2, titleId);
-							writer.setInt(1, personId);
-							writer.addBatch();
-						}
-
-					} else if (profession.equals("producer")) {
-						if (!producerHmap.containsKey(titleId)) {
-							producerHmap.put(titleId, new HashSet<>());
-						}
-						if (!producerHmap.get(titleId).contains(personId)) {
-							producerHmap.get(titleId).add(personId);
-							producer.setInt(2, titleId);
-							producer.setInt(1, personId);
-							producer.addBatch();
-						}
-
-					} else if (profession.equals("self") || profession.equals("actor")
-							|| profession.equals("actress")) {
-						if (!actorHmap.containsKey(titleId)) {
-							actorHmap.put(titleId, new HashSet<>());
-						}
-						if (!actorHmap.get(titleId).contains(personId)) {
-							actorHmap.get(titleId).add(personId);
-							actor.setInt(2, titleId);
-							actor.setInt(1, personId);
-							actor.addBatch();
-						}
-					}
-					size++;
-					if (size % bSize == 0) {
-						director.executeBatch();
-						writer.executeBatch();
-						producer.executeBatch();
-						actor.executeBatch();
-						connect.commit();
-						director.clearBatch();
-						writer.clearBatch();
-						producer.clearBatch();
-						actor.clearBatch();
-					}
-				}
-			}
-			director.executeBatch();
-			writer.executeBatch();
-			producer.executeBatch();
-			actor.executeBatch();
-			connect.commit();
-
-			scan.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (director != null) {
-					director.close();
-				}
-				if (writer != null) {
-					writer.close();
-				}
-				if (producer != null) {
-					producer.close();
-				}
-				if (actor != null) {
-					actor.close();
-				}
-				if (connect != null) {
-					connect.close();
-				}
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-		}
-		System.out.println("insertRelData ended");
-	}
-
 	// Function to insert data into the MOVIE_TV Table.
 	public static void insertMovieAndTv() {
 		System.out.println("insertMovieAndTv started");
@@ -592,52 +542,50 @@ public class imdb {
 					"INSERT INTO MOVIE_TV(TitleId,Name,TitleType,StartYear,EndYear,TotalRunTime,AvgRatings,NoOfVotes) VALUES(?,?,?,?,?,?,?,?)");
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
-				int tId = Integer.parseInt(information[0].substring(2));
-				int sYear;
-				if (information[5].equals("\\N")) {
-					sYear = 0;
-				} else {
-					sYear = Integer.parseInt(information[5]);
+				if (!information[8].contains("\\N") && !information[7].contains("\\N")
+						&& !information[7].contains("0")) {
+					int tId = Integer.parseInt(information[0].substring(2));
+					int sYear;
+					if (information[5].equals("\\N")) {
+						sYear = 0;
+					} else {
+						sYear = Integer.parseInt(information[5]);
+					}
+					int eYear;
+					if (information[6].equals("\\N")) {
+						eYear = 0;
+					} else {
+						eYear = Integer.parseInt(information[6]);
+					}
+					int ttRun = Integer.parseInt(information[7]);
+					queryStatement.setInt(1, tId);
+					queryStatement.setInt(4, sYear);
+					queryStatement.setInt(5, eYear);
+					queryStatement.setInt(6, ttRun);
+					queryStatement.setDouble(7, 0);
+					queryStatement.setInt(8, 0);
+					String tName = information[2];
+					queryStatement.setString(2, tName);
+					if (information[1].equals("movie") || information[1].equals("tvMovie")) {
+						String tType = "Movie";
+						queryStatement.setString(3, tType);
+					} else if (information[1].equals("tvMiniSeries") || information[1].equals("tvSeries")
+							|| information[1].equals("tvSpecial")) {
+						String tType = "Tv-Show";
+						queryStatement.setString(3, tType);
+					} else {
+						continue;
+					}
+					queryStatement.addBatch();
+					size++;
+					if (size % bSize == 0) {
+						queryStatement.executeBatch();
+						connect.commit();
+						queryStatement.clearBatch();
+					}
+
 				}
-				int eYear;
-				if (information[6].equals("\\N")) {
-					eYear = 0;
-				} else {
-					eYear = Integer.parseInt(information[6]);
-				}
-				int ttRun;
-				if (information[7].equals("\\N")) {
-					ttRun = 0;
-				} else {
-					ttRun = Integer.parseInt(information[7]);
-				}
-				queryStatement.setInt(1, tId);
-				queryStatement.setInt(4, sYear);
-				queryStatement.setInt(5, eYear);
-				queryStatement.setInt(6, ttRun);
-				queryStatement.setDouble(7, 0);
-				queryStatement.setInt(8, 0);
-				String tName = information[2];
-				queryStatement.setString(2, tName);
-				if (information[1].equals("short") || information[1].equals("movie")
-						|| information[1].equals("tvMovie")) {
-					String tType = "Movie";
-					queryStatement.setString(3, tType);
-				} else if (information[1].equals("tvEpisode") || information[1].equals("tvMiniSeries")
-						|| information[1].equals("tvSeries") || information[1].equals("tvSpecial")
-						|| information[1].equals("tvShort")) {
-					String tType = "Tv-Show";
-					queryStatement.setString(3, tType);
-				} else {
-					continue;
-				}
-				queryStatement.addBatch();
-				size++;
-				if (size % bSize == 0) {
-					queryStatement.executeBatch();
-					connect.commit();
-					queryStatement.clearBatch();
-				}
+
 			}
 			queryStatement.executeBatch();
 			connect.commit();
@@ -646,7 +594,7 @@ public class imdb {
 			Scanner scan1 = new Scanner(iStream1, "UTF-8");
 			scan1.nextLine();
 			ResultSet result = connect.prepareStatement("SELECT TitleId from Movie_Tv").executeQuery();
-			while(result.next()) {
+			while (result.next()) {
 				tIdSet.add(result.getInt("TitleId"));
 			}
 			queryStatement = connect
@@ -691,6 +639,39 @@ public class imdb {
 		System.out.println("insertMovieAndTv ended");
 	}
 
+	// Function to update the MOVIE_TV table by eliminating the records that do not
+	// satisfy the applied conditions.
+	public static void updateMTV() {
+		System.out.println("updateMTV started");
+		try {
+			connect = DriverManager.getConnection(url, username, password);
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			connect.setAutoCommit(false);
+			ResultSet result = connect.prepareStatement("SELECT * FROM Movie_Tv WHERE AvgRatings = 0 AND NoOfVotes = 0")
+					.executeQuery();
+			while (result.next()) {
+				queryStatement = connect.prepareStatement("DELETE FROM movie_tv WHERE TitleId = ?");
+				queryStatement.setInt(1, result.getInt("TitleId"));
+				queryStatement.executeUpdate();
+				connect.commit();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (queryStatement != null) {
+					queryStatement.close();
+				}
+				if (connect != null) {
+					connect.close();
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+		System.out.println("updateMTV ended");
+	}
+
 	// Function to insert data into the PEOPLE Table.
 	public static void insertPeople() {
 		System.out.println("insertPeople started");
@@ -707,30 +688,28 @@ public class imdb {
 					.prepareStatement("INSERT INTO PEOPLE(PersonId,Name,BirthYear,DeathYear) VALUES(?,?,?,?)");
 			while (scan.hasNextLine()) {
 				String information[] = scan.nextLine().split("\t");
-				int bYear;
-				int dYear;
-				if (information[2].equals("\\N")) {
-					bYear = 0;
-				} else {
-					bYear = Integer.parseInt(information[2]);
-				}
-				if (information[3].equals("\\N")) {
-					dYear = 0;
-				} else {
-					dYear = Integer.parseInt(information[3]);
-				}
-				queryStatement.setInt(3, bYear);
-				queryStatement.setInt(4, dYear);
-				int prsnId = Integer.parseInt(information[0].substring(2));
-				queryStatement.setInt(1, prsnId);
-				String pName = information[1];
-				queryStatement.setString(2, pName);
-				queryStatement.addBatch();
-				size++;
-				if (size % bSize == 0) {
-					queryStatement.executeBatch();
-					connect.commit();
-					queryStatement.clearBatch();
+				if (!information[1].contains("\\N") && !information[5].contains("\\N")
+						&& !information[4].contains("\\N") && !information[2].contains("\\N")) {
+					int bYear = Integer.parseInt(information[2]);
+					int dYear;
+					if (information[3].equals("\\N")) {
+						dYear = 0;
+					} else {
+						dYear = Integer.parseInt(information[3]);
+					}
+					queryStatement.setInt(3, bYear);
+					queryStatement.setInt(4, dYear);
+					int prsnId = Integer.parseInt(information[0].substring(2));
+					queryStatement.setInt(1, prsnId);
+					String pName = information[1];
+					queryStatement.setString(2, pName);
+					queryStatement.addBatch();
+					size++;
+					if (size % bSize == 0) {
+						queryStatement.executeBatch();
+						connect.commit();
+						queryStatement.clearBatch();
+					}
 				}
 			}
 			queryStatement.executeBatch();
@@ -843,21 +822,24 @@ public class imdb {
 	}
 
 	public static void main(String[] args) {
-		url = "jdbc:mysql://localhost:3306/IMDB";
-		username = "root";
-		password = "";
-		fPath = "";
+		url = args[0];
+		username = args[1];
+		password = args[2];
+		fPath = args[3];
 		connectNcreateDb();
 		createTable();
 		insertPeople();
 		insertMovieAndTv();
-//		insertRelData();
+		updateMTV();
 		insertActInfo();
 		insertDirInfo();
 		insertProdInfo();
 		insertWriInfo();
 		insertGenre();
 		insertHaveG();
+//		createInd();
+//		complexQE();
+//		dropInd();
 	}
 
 }

@@ -1,0 +1,17 @@
+SHOW INDEXES FROM PEOPLE;
+SHOW INDEXES FROM movie_tv;
+
+CREATE index Pnames ON people(Name);
+CREATE INDEX Pdeath ON people(DeathYear);
+drop index Pnames on people;
+drop index Pdeath on people;
+
+CREATE INDEX Tname ON movie_tv(Name);
+CREATE INDEX nVotes ON movie_tv(NoOfVotes);
+DROP INDEX Tname ON movie_tv;
+DROP INDEX nVotes ON movie_tv;
+
+Select * from people where Name like 'Jo%' and DeathYear = 0;
+SELECT * FROM movie_tv where  NoOfVotes > 10000;
+SELECT people.PersonId, movie_tv.TitleId, people.Name, movie_tv.Name from people, movie_tv, acted_in WHERE people.Name LIKE 'Ma%' AND people.DeathYear != 0 AND people.PersonId = acted_in.PersonId AND movie_tv.TitleId = acted_in.TitleId;
+
